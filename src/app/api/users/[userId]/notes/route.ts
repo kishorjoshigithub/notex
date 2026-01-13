@@ -4,7 +4,7 @@ import { noteSchema } from "@/validation/notes";
 import { Timestamp } from "firebase/firestore";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(request: NextRequest, res: NextResponse) {
+export async function POST(request: NextRequest) {
   try {
     const { topicId, title, content, importance, userId } =
       await request.json();

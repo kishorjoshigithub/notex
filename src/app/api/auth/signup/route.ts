@@ -2,7 +2,7 @@ import { signupUser } from "@/firebase/auth";
 import { SignupSchema } from "@/validation/auth";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(request: NextRequest, response: NextResponse) {
+export async function POST(request: NextRequest) {
   const { name, email, password } = await request.json();
   try {
     const validData = SignupSchema.safeParse({ name, email, password });

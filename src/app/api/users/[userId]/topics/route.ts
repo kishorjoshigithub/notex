@@ -24,7 +24,7 @@ export async function GET(
   return NextResponse.json(topics ?? [], { status: 200 });
 }
 
-export async function POST(req: NextRequest, res: NextResponse) {
+export async function POST(req: NextRequest) {
   try {
     const { name, id, description } = await req.json();
     const validData = TopicSchema.safeParse({ name, description });
