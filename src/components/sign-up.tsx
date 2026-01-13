@@ -45,7 +45,6 @@ export default function LoginPage() {
       console.log(response);
       if (response.status === 201) {
         toast.success(response.data.message);
-        router.push("/login");
       }
     } catch (error: any) {
       const errorMessage = error.response.data.error;

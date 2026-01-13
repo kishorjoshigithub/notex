@@ -1,4 +1,5 @@
 import { User } from "firebase/auth";
+import { Timestamp } from "firebase/firestore";
 
 interface NewUser {
   name: string;
@@ -42,22 +43,32 @@ interface HeaderProps {
   setIsOpen: (isOpen: boolean) => void;
 }
 
-type Importance = "High" | "Medium" | "Low";
+type Importance = "high" | "medium" | "low";
 
 interface Topic {
   id: string;
   name: string;
-  createdAt: string;
-  updatedAt: string;
+  description: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 interface Note {
-  id: string;
+  topicId: string;
+  userId: string;
+  title: string;
   content: string;
   importance: Importance;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
+
+type DashboardData = {
+  topicCount: number;
+  noteCount: number;
+  recentTopics: any[];
+  recentNotes: any[];
+};
 
 export type {
   NewUser,
@@ -71,4 +82,5 @@ export type {
   Importance,
   Topic,
   Note,
+  DashboardData,
 };

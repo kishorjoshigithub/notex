@@ -96,7 +96,7 @@ export default function LoginPage() {
                 </Label>
                 <Button asChild variant="link" size="sm">
                   <Link
-                    href="#"
+                    href="/reset"
                     className="link intent-info variant-ghost text-sm"
                   >
                     Forgot your Password ?

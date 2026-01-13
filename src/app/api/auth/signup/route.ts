@@ -18,7 +18,7 @@ export async function POST(request: NextRequest, response: NextResponse) {
       );
     }
     return NextResponse.json(
-      { message: "User created successfully" },
+      { message: "Sign up successful ! Verify your email to login" },
       { status: 201 }
     );
   } catch (error) {

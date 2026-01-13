@@ -32,7 +32,7 @@ export default function DashboardLayout({
 
   if (isLoading) {
     return (
-      <div className="w-full h-full">
+      <div className="w-full min-h-screen flex justify-center items-center">
         <Loader2Icon className="animate-spin size-7 text-white" />
       </div>
     );
@@ -53,9 +53,7 @@ export default function DashboardLayout({
             pageTitle={pageTitles[currentPage]}
             setIsOpen={setIsSidebarOpen}
           />
-          <main className="flex-1 overflow-y-auto p-6 bg-gray-800 rounded-tl-md rounded-tr-md">
-            {children}
-          </main>
+          <main className="flex-1 overflow-y-auto p-6">{children}</main>
         </div>
       </div>
     </>
