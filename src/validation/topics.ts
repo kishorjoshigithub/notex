@@ -8,7 +8,7 @@ const TopicSchema = z.object({
   description: z
     .string()
     .min(3, { message: "Description must be at least 3 characters" })
-    .max(80, { message: "Description must be at most 80 characters" }),
+    .max(100, { message: "Description must be at most 100 characters" }),
 });
 
 export { TopicSchema };

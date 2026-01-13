@@ -10,7 +10,7 @@ const noteSchema = z.object({
   content: z
     .string()
     .min(3, { message: "Content must be at least 3 characters" })
-    .max(1000, { message: "Content must be at most 1000 characters" }),
+    .max(5000, { message: "Content must be at most 5000 characters" }),
   importance: z.enum(["low", "medium", "high"]),
 });
 
