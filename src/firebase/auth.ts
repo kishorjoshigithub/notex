@@ -47,7 +47,7 @@ const signupUser = async (user: NewUser) => {
       name: userCredential.user.displayName,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-      emailVerified: userCredential.user.emailVerified,
+      isEmailVerified: userCredential.user.emailVerified,
     });
 
     return { docRef, message: "Verify Email to complete the signup" };
