@@ -242,7 +242,7 @@ const NotesComponent: React.FC = () => {
                   key={note.id}
                   className="group relative overflow-hidden border border-border/60 shadow-sm transition-all hover:shadow-lg"
                 >
-                  <div className="absolute right-4 top-4 flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                  <div className="absolute right-4 top-4 flex gap-2 opacity-1000 transition-opacity ">
                     <Button
                       variant="outline"
                       size="icon"
@@ -298,8 +298,6 @@ const NotesComponent: React.FC = () => {
                           }}
                         />
                       </div>
-
-                      <div className="absolute bottom-0 left-0 right-0 h-12 bg-linear-to-t from-card to-transparent" />
                     </div>
 
                     <div className="mt-4 pt-4 border-t flex flex-wrap items-center gap-4 text-[11px] font-medium text-muted-foreground/80">
