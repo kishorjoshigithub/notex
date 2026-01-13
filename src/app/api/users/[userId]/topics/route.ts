@@ -6,9 +6,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ userId: string }> }
+  context: { params: { userId: string } }
 ) {
-  const { userId } = await context.params;
+  const { userId } = context.params;
 
   if (!userId) {
     return NextResponse.json({ error: "Invalid userId" }, { status: 400 });

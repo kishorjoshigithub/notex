@@ -47,9 +47,9 @@ export async function POST(request: NextRequest) {
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ userId: string }> }
+  context: { params: { userId: string } }
 ) {
-  const { userId } = await context.params;
+  const { userId } = context.params;
 
   if (!userId) {
     return NextResponse.json({ error: "Invalid userId" }, { status: 400 });
