@@ -5,10 +5,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { noteId: string } }
+  context: { params: Promise<{ userId: string; noteId: string }> }
 ) {
   try {
-    const { noteId } = context.params;
+    const { noteId } = await context.params;
 
     if (!noteId) {
       return NextResponse.json({ error: "Invalid topicId" }, { status: 400 });
@@ -30,10 +30,10 @@ export async function DELETE(
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { noteId: string } }
+  context: { params: Promise<{ userId: string; noteId: string }> }
 ) {
   try {
-    const { noteId } = context.params;
+    const { noteId } = await context.params;
 
     if (!noteId) {
       return NextResponse.json({ error: "Invalid noteId" }, { status: 400 });
