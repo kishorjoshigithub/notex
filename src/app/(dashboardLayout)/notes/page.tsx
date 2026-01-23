@@ -162,7 +162,7 @@ const NotesComponent: React.FC = () => {
       closeModal();
     } catch {
       toast.error(
-        editingNoteId ? "Failed to update note" : "Failed to create note"
+        editingNoteId ? "Failed to update note" : "Failed to create note",
       );
     } finally {
       setSaving(false);
@@ -288,7 +288,7 @@ const NotesComponent: React.FC = () => {
                   </CardHeader>
 
                   <CardContent className="flex-1 pb-6">
-                    <div className="relative h-52 overflow-x-hidden  overflow-y-auto">
+                    <div className="relative h-52 overflow-auto">
                       <div className="prose prose-invert prose-sm max-w-none text-muted-foreground  pointer-events-none">
                         <MDEditor.Markdown
                           source={note.content}
@@ -308,7 +308,7 @@ const NotesComponent: React.FC = () => {
                       <span className="flex items-center gap-1.5">
                         <Calendar size={12} />
                         {new Date(
-                          note.createdAt.seconds * 1000
+                          note.createdAt.seconds * 1000,
                         ).toLocaleDateString()}
                       </span>
                     </div>
@@ -420,8 +420,8 @@ const NotesComponent: React.FC = () => {
                 {saving
                   ? "Saving..."
                   : editingNoteId
-                  ? "Update Note"
-                  : "Save Note"}
+                    ? "Update Note"
+                    : "Save Note"}
               </Button>
 
               <Button variant="outline" onClick={closeModal}>
