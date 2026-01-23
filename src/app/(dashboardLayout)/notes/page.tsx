@@ -288,8 +288,8 @@ const NotesComponent: React.FC = () => {
                   </CardHeader>
 
                   <CardContent className="flex-1 pb-6">
-                    <div className="relative h-52 overflow-auto">
-                      <div className="prose prose-invert prose-sm max-w-none text-muted-foreground  pointer-events-none">
+                    <div className="relative h-52 overflow-y-auto pr-2">
+                      <div className="prose prose-invert prose-sm max-w-none text-muted-foreground">
                         <MDEditor.Markdown
                           source={note.content}
                           style={{
@@ -298,19 +298,6 @@ const NotesComponent: React.FC = () => {
                           }}
                         />
                       </div>
-                    </div>
-
-                    <div className="mt-4 pt-4 border-t flex flex-wrap items-center gap-4 text-[11px] font-medium text-muted-foreground/80">
-                      <span className="flex items-center gap-1.5 bg-secondary/50 px-2 py-1 rounded-md">
-                        <Tag size={12} className="text-primary" />
-                        {getTopicName(note.topicId)}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <Calendar size={12} />
-                        {new Date(
-                          note.createdAt.seconds * 1000,
-                        ).toLocaleDateString()}
-                      </span>
                     </div>
                   </CardContent>
                 </Card>
