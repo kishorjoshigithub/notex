@@ -26,7 +26,7 @@ const getNotesByUserId = async (userId: string) => {
   try {
     const userQuery = query(
       collection(db, "notes"),
-      where("userId", "==", userId)
+      where("userId", "==", userId),
     );
 
     const userSnapshot = await getDocs(userQuery);
@@ -37,6 +37,37 @@ const getNotesByUserId = async (userId: string) => {
     }
 
     const notes = userSnapshot.docs.map((doc: any) => ({
+      id: doc.id,
+      topicId: doc.data().topicId,
+      userId: doc.data().userId,
+      title: doc.data().title,
+      content: doc.data().content,
+      importance: doc.data().importance,
+      createdAt: doc.data().createdAt,
+      updatedAt: doc.data().updatedAt,
+    }));
+
+    return notes;
+  } catch (error: any) {
+    console.error(error.code, error.message);
+  }
+};
+
+const getNotesByTopicId = async (topicId: string) => {
+  try {
+    const topicQuery = query(
+      collection(db, "notes"),
+      where("topicId", "==", topicId),
+    );
+
+    const topicSnapshot = await getDocs(topicQuery);
+
+    if (topicSnapshot.empty) {
+      throw new Error("No notes found");
+      return;
+    }
+
+    const notes = topicSnapshot.docs.map((doc: any) => ({
       id: doc.id,
       topicId: doc.data().topicId,
       userId: doc.data().userId,
@@ -80,4 +111,10 @@ const updateNote = async (noteId: string, note: Note) => {
   }
 };
 
-export { createNote, getNotesByUserId, deleteNote, updateNote };
+export {
+  createNote,
+  getNotesByUserId,
+  deleteNote,
+  updateNote,
+  getNotesByTopicId,
+};

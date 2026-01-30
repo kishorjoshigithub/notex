@@ -7,6 +7,7 @@ import Logo from "./logo";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/authContext";
 import Link from "next/link";
+import TopicDropdown from "./topic-dropdown";
 
 const Sidebar: React.FC<SidebarProps> = ({
   isOpen,
@@ -77,6 +78,8 @@ const Sidebar: React.FC<SidebarProps> = ({
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        <TopicDropdown />
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1">

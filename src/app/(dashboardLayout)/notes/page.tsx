@@ -12,6 +12,7 @@ import {
   Pencil,
   Trash2Icon,
   Edit2Icon,
+  Search,
 } from "lucide-react";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -33,6 +34,8 @@ import toast from "react-hot-toast";
 
 import { Importance, Note, Topic } from "@/types";
 import { Timestamp } from "firebase/firestore";
+import { useTopic } from "@/context/topicContext";
+import DeleteModal from "@/components/DeleteModel";
 
 const INITIAL_FORM_STATE: Note = {
   title: "",
@@ -53,38 +56,72 @@ const importanceColors: any = {
 const NotesComponent: React.FC = () => {
   const { user } = useAuth();
   const [notes, setNotes] = useState<any[]>([]);
-  const [topics, setTopics] = useState<Topic[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState<Note>(INITIAL_FORM_STATE);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  const [selectedTopic, setSelectedTopic] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"newest" | "oldest">("newest");
   const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null);
+  const { topics, selectedTopic } = useTopic();
 
-  const fetchTopics = useCallback(async () => {
-    if (!user?.uid) return;
-    const res = await api.get(`/users/${user.uid}/topics`);
-    setTopics(res.data);
-  }, [user?.uid]);
+  const [search, setSearch] = useState("");
+  const [importanceFilter, setImportanceFilter] = useState<
+    "all" | "low" | "medium" | "high"
+  >("all");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest">("newest");
 
-  const fetchNotes = useCallback(async () => {
-    if (!user?.uid) return;
-    const res = await api.get(`/users/${user.uid}/notes`);
-    setNotes(res.data);
-  }, [user?.uid]);
+  const fetchNotes = async () => {
+    if (!user?.uid || !selectedTopic) return;
+    try {
+      setLoading(true);
+      const res = await api.get(
+        `/users/${user?.uid}/topics/${selectedTopic.id}`,
+      );
+      setNotes(res.data);
+    } catch (err) {
+      console.error("Failed to fetch notes", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (!user?.uid) return;
-    setLoading(true);
-    Promise.all([fetchTopics(), fetchNotes()])
-      .catch(() => toast.error("Failed to load notes"))
-      .finally(() => setLoading(false));
-  }, [fetchNotes, fetchTopics, user?.uid]);
+    if (!selectedTopic?.id || !user?.uid || topics.length === 0) {
+      return;
+    }
+    fetchNotes();
+  }, [user?.uid, selectedTopic?.id]);
+
+  const filteredNotes = useMemo(() => {
+    let result = [...notes];
+
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (n) =>
+          n.title.toLowerCase().includes(q) ||
+          n.content.toLowerCase().includes(q),
+      );
+    }
+
+    if (importanceFilter !== "all") {
+      result = result.filter((n) => n.importance === importanceFilter);
+    }
+
+    result.sort((a, b) => {
+      const aTime = a.createdAt?.seconds ?? 0;
+      const bTime = b.createdAt?.seconds ?? 0;
+      return sortBy === "newest" ? bTime - aTime : aTime - bTime;
+    });
+
+    return result;
+  }, [notes, search, importanceFilter, sortBy]);
 
   const openModal = (note?: any) => {
+    if (!user?.uid || !selectedTopic) return;
+
     if (note) {
       setEditingNoteId(note.id);
       setFormData({
@@ -100,36 +137,23 @@ const NotesComponent: React.FC = () => {
       setEditingNoteId(null);
       setFormData({
         ...INITIAL_FORM_STATE,
-        title: "",
-        content: "",
-        topicId: topics.length ? topics[0].id : "",
-        userId: user?.uid || "",
+        topicId: selectedTopic.id,
+        userId: user?.uid,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
       });
     }
-
+    console.log(formData);
     setErrors({});
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
+    setFormData(INITIAL_FORM_STATE);
     setEditingNoteId(null);
     setIsModalOpen(false);
     setErrors({});
   };
-
-  const filteredAndSortedNotes = useMemo(() => {
-    const filtered =
-      selectedTopic === "all"
-        ? notes
-        : notes.filter((n) => n.topicId === selectedTopic);
-
-    return [...filtered].sort((a, b) => {
-      const aTime = a.createdAt.seconds * 1000;
-      const bTime = b.createdAt.seconds * 1000;
-
-      return sortBy === "newest" ? bTime - aTime : aTime - bTime;
-    });
-  }, [notes, selectedTopic, sortBy]);
 
   const handleChange = <K extends keyof Note>(key: K, value: Note[K]) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -158,7 +182,7 @@ const NotesComponent: React.FC = () => {
         toast.success("Note created successfully");
       }
 
-      await fetchNotes();
+      fetchNotes();
       closeModal();
     } catch {
       toast.error(
@@ -168,9 +192,6 @@ const NotesComponent: React.FC = () => {
       setSaving(false);
     }
   };
-
-  const getTopicName = (id: string) =>
-    topics.find((t) => t.id === id)?.name || "Unknown";
 
   const handleDeleteNote = async (noteId: string) => {
     try {
@@ -199,91 +220,104 @@ const NotesComponent: React.FC = () => {
       ) : (
         <>
           <div className="flex flex-wrap-reverse max-sm:gap-4 justify-between items-center mb-8 border-b border-gray-700 py-4">
-            <div className="flex flex-wrap gap-3 items-center">
-              <label className="text-sm font-medium">Filter by Topic : </label>
+            <div className="flex flex-wrap items-center gap-3">
               <Select
-                value={selectedTopic || "all"}
-                onValueChange={(v) => setSelectedTopic(v)}
+                value={importanceFilter}
+                onValueChange={(v) => setImportanceFilter(v as any)}
               >
-                <SelectTrigger className="my-3">
-                  <SelectValue placeholder="Select topic" />
+                <SelectTrigger className="h-10 w-40">
+                  <SelectValue placeholder="Priority" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Topics</SelectItem>
-                  {topics.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.name}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all">All priorities</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
                 </SelectContent>
               </Select>
 
-              <label className="text-sm font-medium ml-4">Sort by : </label>
-              <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
-                <SelectTrigger className="my-3">
-                  <SelectValue placeholder="Select sort by" />
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+                <SelectTrigger className="h-10 w-40">
+                  <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="newest">Newest</SelectItem>
-                  <SelectItem value="oldest">Oldest</SelectItem>
+                  <SelectItem value="newest">Newest first</SelectItem>
+                  <SelectItem value="oldest">Oldest first</SelectItem>
                 </SelectContent>
               </Select>
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search notes..."
+                className={`h-10 w-64 rounded-md border border-border bg-background
+    p-4 text-sm
+    placeholder:text-muted-foreground
+    focus:outline-none focus:ring-2 focus:ring-ring`}
+              />
             </div>
-            <Button onClick={openModal} className="gap-2">
+
+            <Button
+              onClick={() => openModal(null)}
+              disabled={!selectedTopic}
+              className="h-10 gap-2"
+            >
               <Plus size={16} />
               New Note
             </Button>
           </div>
 
-          {filteredAndSortedNotes.length ? (
+          {filteredNotes.length ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {filteredAndSortedNotes.map((note) => (
+              {filteredNotes.map((note) => (
                 <Card
                   key={note.id}
                   className="group relative overflow-hidden border border-border/60 shadow-sm transition-all hover:shadow-lg"
                 >
-                  <div className="absolute right-4 top-4 flex gap-2 opacity-1000 transition-opacity ">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openModal(note);
-                      }}
-                    >
-                      <Edit2Icon className="h-4 w-4 text-primary" />
-                    </Button>
+                  <CardHeader className=" border-b border-gray-500/40">
+                    <div className="flex gap-2 sm:gap-0 justify-between items-center flex-wrap ">
+                      <div className=" space-y-2">
+                        <CardTitle className="text-lg font-semibold leading-tight">
+                          {note.title}
+                        </CardTitle>
 
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      disabled={deletingNoteId === note.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteNote(note.id);
-                      }}
-                    >
-                      {deletingNoteId === note.id ? (
-                        <Loader2Icon className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2Icon className="h-4 w-4 text-destructive" />
-                      )}
-                    </Button>
-                  </div>
+                        <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1 capitalize">
+                            <Tag
+                              size={12}
+                              className={importanceColors[note.importance]}
+                            />
+                            {note.importance}
+                          </span>
+                        </div>
+                      </div>
+                      <div className=" flex gap-2 opacity-1000 transition-opacity ">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openModal(note);
+                          }}
+                        >
+                          <Edit2Icon className="h-4 w-4 text-primary" />
+                        </Button>
 
-                  <CardHeader className="space-y-2 border-b border-gray-500/40">
-                    <CardTitle className="text-lg font-semibold leading-tight">
-                      {note.title}
-                    </CardTitle>
-
-                    <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1 capitalize">
-                        <Tag
-                          size={12}
-                          className={importanceColors[note.importance]}
-                        />
-                        {note.importance}
-                      </span>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          disabled={deletingNoteId === note.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteNoteId(note.id);
+                          }}
+                        >
+                          {deletingNoteId === note.id ? (
+                            <Loader2Icon className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2Icon className="h-4 w-4 text-destructive" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
 
@@ -311,7 +345,11 @@ const NotesComponent: React.FC = () => {
                 <p className="text-muted-foreground mb-6">
                   Create your first note to get started.
                 </p>
-                <Button onClick={openModal} className="gap-2">
+                <Button
+                  onClick={() => openModal(null)}
+                  disabled={!selectedTopic}
+                  className="gap-2"
+                >
                   <Plus size={16} />
                   Add Note
                 </Button>
@@ -333,6 +371,9 @@ const NotesComponent: React.FC = () => {
                 onClick={closeModal}
               />
             </div>
+            {errors.topicId && (
+              <p className="text-sm text-destructive">{errors.topicId}</p>
+            )}
 
             <input
               className="mb-2 w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -342,25 +383,6 @@ const NotesComponent: React.FC = () => {
             />
             {errors.title && (
               <p className="text-sm text-destructive">{errors.title}</p>
-            )}
-
-            <Select
-              value={formData.topicId || ""}
-              onValueChange={(v) => handleChange("topicId", v)}
-            >
-              <SelectTrigger className="my-3 w-full">
-                <SelectValue placeholder="Select topic" />
-              </SelectTrigger>
-              <SelectContent>
-                {topics.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.topicId && (
-              <p className="text-sm text-destructive">{errors.topicId}</p>
             )}
 
             <Select
@@ -417,6 +439,19 @@ const NotesComponent: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {deleteNoteId && (
+        <DeleteModal
+          id={deleteNoteId}
+          title="Delete Note"
+          message="Are you sure you want to delete this note? This action cannot be undone."
+          onSubmit={(id) => {
+            handleDeleteNote(id);
+            setDeleteNoteId(null);
+          }}
+          onClose={() => setDeleteNoteId(null)}
+        />
       )}
     </div>
   );

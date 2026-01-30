@@ -3,6 +3,7 @@
 import Header from "@/components/dash-header";
 import Sidebar from "@/components/sidebar";
 import { useAuth } from "@/context/authContext";
+import { TopicProvider } from "@/context/topicContext";
 import { PageId } from "@/types";
 import { Loader2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -40,22 +41,24 @@ export default function DashboardLayout({
 
   return (
     <>
-      <div className="flex h-screen  overflow-hidden">
-        <Sidebar
-          isOpen={isSidebarOpen}
-          setIsOpen={setIsSidebarOpen}
-          currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
-        />
-
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <Header
-            pageTitle={pageTitles[currentPage]}
+      <TopicProvider>
+        <div className="flex h-screen  overflow-hidden">
+          <Sidebar
+            isOpen={isSidebarOpen}
             setIsOpen={setIsSidebarOpen}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
           />
-          <main className="flex-1 overflow-y-auto p-6">{children}</main>
+
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <Header
+              pageTitle={pageTitles[currentPage]}
+              setIsOpen={setIsSidebarOpen}
+            />
+            <main className="flex-1 overflow-y-auto p-6">{children}</main>
+          </div>
         </div>
-      </div>
+      </TopicProvider>
     </>
   );
 }

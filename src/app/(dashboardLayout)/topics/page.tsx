@@ -25,9 +25,11 @@ import api from "@/lib/axios";
 import { useAuth } from "@/context/authContext";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { useTopic } from "@/context/topicContext";
+import { getUserTopics } from "@/services/topicService";
+import DeleteModal from "@/components/DeleteModel";
 
 const Topics: React.FC = () => {
-  const [topics, setTopics] = useState<Topic[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newTopicName, setNewTopicName] = useState("");
   const [newTopicDescription, setNewTopicDescription] = useState("");
@@ -35,26 +37,12 @@ const Topics: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [deletingTopicId, setDeletingTopicId] = useState<string | null>(null);
+  const [deleteTopicId, setDeleteTopicId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { user } = useAuth();
   const router = useRouter();
-
-  const fetchTopics = async () => {
-    if (!user?.uid) return;
-    try {
-      const response = await api.get(`/users/${user.uid}/topics`);
-      if (response.status === 200) setTopics(response.data);
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setFetching(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTopics();
-  }, [user?.uid]);
+  const { topics, selectedTopic, setSelectedTopic, loading } = useTopic();
 
   const handleSubmitTopic = async () => {
     const parsed = TopicSchema.safeParse({
@@ -82,15 +70,15 @@ const Topics: React.FC = () => {
         });
         toast.success("Topic updated");
       } else {
-        await api.post("/users/[userId]/topics", {
+        const res = await api.post("/users/[userId]/topics", {
           name: newTopicName,
           description: newTopicDescription,
           id: user?.uid,
         });
+        setSelectedTopic(res.data.id);
         toast.success("Topic created");
       }
 
-      fetchTopics();
       setIsDialogOpen(false);
       setEditingTopic(null);
       setNewTopicName("");
@@ -106,8 +94,8 @@ const Topics: React.FC = () => {
     try {
       setDeletingTopicId(topicId);
       await api.delete(`users/${user?.uid}/topics/${topicId}`);
+      setSelectedTopic(selectedTopic);
       toast.success("Topic deleted");
-      fetchTopics();
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -141,13 +129,13 @@ const Topics: React.FC = () => {
       </div>
 
       {/* Loading */}
-      {fetching && (
+      {loading && (
         <div className="flex justify-center py-20">
           <Loader2Icon className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       )}
 
-      {!fetching && topics.length === 0 && (
+      {!loading && topics.length === 0 && (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center  text-center">
             <div className="mb-4 rounded-full bg-primary/10 p-4">
@@ -168,12 +156,15 @@ const Topics: React.FC = () => {
         </Card>
       )}
 
-      {!fetching && topics.length > 0 && (
+      {!loading && topics.length > 0 && (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {topics.map((topic) => (
             <Card
               key={topic.id}
-              onClick={() => router.push("/notes")}
+              onClick={() => {
+                setSelectedTopic(topic);
+                router.push("/notes");
+              }}
               className="
                 group cursor-pointer
                 transition-all
@@ -199,7 +190,7 @@ const Topics: React.FC = () => {
                 <p className="text-xs text-muted-foreground">
                   Created{" "}
                   {new Date(
-                    topic.createdAt.seconds * 1000
+                    topic.createdAt.seconds * 1000,
                   ).toLocaleDateString()}
                 </p>
 
@@ -224,7 +215,7 @@ const Topics: React.FC = () => {
                     disabled={deletingTopicId === topic.id}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDeleteTopic(topic.id);
+                      setDeleteTopicId(topic.id);
                     }}
                   >
                     {deletingTopicId === topic.id ? (
@@ -303,6 +294,19 @@ const Topics: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {deleteTopicId && (
+        <DeleteModal
+          id={deleteTopicId}
+          title="Delete topic"
+          message="Are you sure you want to delete this topic? This action cannot be undone."
+          onSubmit={(id) => {
+            handleDeleteTopic(id);
+            setDeleteTopicId(null);
+          }}
+          onClose={() => setDeleteTopicId(null)}
+        />
+      )}
     </div>
   );
 };

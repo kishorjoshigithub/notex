@@ -17,6 +17,13 @@ type AuthContextType = {
   isLoading: boolean;
 };
 
+type TopicContextType = {
+  topics: Topic[];
+  selectedTopic: Topic | null;
+  setSelectedTopic: (topic: Topic | null) => void;
+  loading: boolean;
+};
+
 interface UserType {
   name: string;
   email: string;
@@ -83,4 +90,5 @@ export type {
   Topic,
   Note,
   DashboardData,
+  TopicContextType,
 };
