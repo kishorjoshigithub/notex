@@ -1,3 +1,4 @@
+"use client";
 import { Topic, TopicContextType } from "@/types";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "./authContext";

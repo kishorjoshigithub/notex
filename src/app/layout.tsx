@@ -5,6 +5,7 @@ import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/context/authContext";
 import { ThemeProvider } from "@/components/theme-provider";
 import NextTopLoader from "nextjs-toploader";
+import { TopicProvider } from "@/context/topicContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,16 +33,18 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <Toaster position="top-right" />
-            <NextTopLoader color="#2563eb" height={3} showSpinner={false} />
-            {children}
-          </ThemeProvider>
+          <TopicProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <Toaster position="top-right" />
+              <NextTopLoader color="#2563eb" height={3} showSpinner={false} />
+              {children}
+            </ThemeProvider>
+          </TopicProvider>
         </AuthProvider>
       </body>
     </html>
