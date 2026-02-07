@@ -1,11 +1,12 @@
-import { deleteNote, updateNote } from "@/firebase/note";
+import { deleteNote, updateNote, updateNoteContent } from "@/firebase/note";
 import { Note } from "@/types";
 import { noteSchema } from "@/validation/notes";
 import { NextRequest, NextResponse } from "next/server";
+import { getCompletion } from "@/services/openai.services";
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ userId: string; noteId: string }> }
+  context: { params: Promise<{ userId: string; noteId: string }> },
 ) {
   try {
     const { noteId } = await context.params;
@@ -17,20 +18,20 @@ export async function DELETE(
     await deleteNote(noteId);
     return NextResponse.json(
       { message: "Topic deleted successfully" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: any) {
     console.log(error);
     return NextResponse.json(
       { error: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ userId: string; noteId: string }> }
+  context: { params: Promise<{ userId: string; noteId: string }> },
 ) {
   try {
     const { noteId } = await context.params;
@@ -54,7 +55,7 @@ export async function PUT(
         { error: validData.error.issues[0].message },
         {
           status: 400,
-        }
+        },
       );
     }
 
@@ -67,13 +68,48 @@ export async function PUT(
     } as Note);
     return NextResponse.json(
       { message: "Note updated successfully", note },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: any) {
     console.log(error);
     return NextResponse.json(
       { error: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
+    );
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ userId: string; noteId: string }> },
+) {
+  try {
+    const { noteId } = await context.params;
+
+    if (!noteId) {
+      return NextResponse.json({ error: "Invalid noteId" }, { status: 400 });
+    }
+
+    const { content } = await request.json();
+
+    const improvedContent = await getCompletion(content);
+    if (improvedContent) {
+      const note = await updateNoteContent(noteId, improvedContent);
+      return NextResponse.json(
+        { message: "Note updated successfully", note },
+        { status: 200 },
+      );
+    } else {
+      return NextResponse.json(
+        { error: "Failed to improve content" },
+        { status: 500 },
+      );
+    }
+  } catch (error: any) {
+    console.log(error);
+    return NextResponse.json(
+      { error: "Something went wrong" },
+      { status: 500 },
     );
   }
 }

@@ -13,6 +13,7 @@ import {
   Trash2Icon,
   Edit2Icon,
   Search,
+  BrainCircuit,
 } from "lucide-react";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -64,7 +65,9 @@ const NotesComponent: React.FC = () => {
   const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   const { topics, selectedTopic } = useTopic();
+  const [generatingNoteId, setGeneratingNoteId] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
   const [importanceFilter, setImportanceFilter] = useState<
@@ -146,6 +149,31 @@ const NotesComponent: React.FC = () => {
     console.log(formData);
     setErrors({});
     setIsModalOpen(true);
+  };
+
+  const handleGenerating = (noteId: string) => {
+    setIsGenerating(true);
+    setGeneratingNoteId(noteId);
+  };
+
+  const generateWithAI = async (content: string, noteId: string) => {
+    setIsGenerating(true);
+    try {
+      const response = await api.patch(`/users/${user?.uid}/notes/${noteId}`, {
+        content: content,
+      });
+      if (response.status === 200) {
+        toast.success("Note has been enhanced with AI");
+        fetchNotes();
+      } else {
+        toast.error(response.data.error);
+      }
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsGenerating(false);
+      setGeneratingNoteId(null);
+    }
   };
 
   const closeModal = () => {
@@ -296,6 +324,21 @@ const NotesComponent: React.FC = () => {
                           size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
+                            generateWithAI(note.content, note.id);
+                            handleGenerating(note.id);
+                          }}
+                        >
+                          {isGenerating && generatingNoteId === note.id ? (
+                            <Loader2Icon className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
                             openModal(note);
                           }}
                         >
@@ -323,15 +366,21 @@ const NotesComponent: React.FC = () => {
 
                   <CardContent className="flex-1 pb-6">
                     <div className="relative h-52 overflow-y-auto pr-2">
-                      <div className="prose prose-invert prose-sm max-w-none text-muted-foreground">
-                        <MDEditor.Markdown
-                          source={note.content}
-                          style={{
-                            backgroundColor: "transparent",
-                            color: "hsl(215 16% 47%)",
-                          }}
-                        />
-                      </div>
+                      {isGenerating && generatingNoteId === note.id ? (
+                        <div className="flex items-center justify-center h-52">
+                          <Loader2Icon className="h-8 w-8 animate-spin" />
+                        </div>
+                      ) : (
+                        <div className="prose prose-invert prose-sm max-w-none text-muted-foreground">
+                          <MDEditor.Markdown
+                            source={note.content}
+                            style={{
+                              backgroundColor: "transparent",
+                              color: "hsl(215 16% 47%)",
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

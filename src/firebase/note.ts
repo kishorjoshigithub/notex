@@ -111,10 +111,25 @@ const updateNote = async (noteId: string, note: Note) => {
   }
 };
 
+const updateNoteContent = async (noteId: string, content: string) => {
+  try {
+    const noteRef = doc(db, "notes", noteId);
+    const updateNote = await updateDoc(noteRef, {
+      content: content,
+      updatedAt: Timestamp.now(),
+    });
+    return updateNote;
+  } catch (error: any) {
+    console.error(error.code, error.message);
+    throw error;
+  }
+};
+
 export {
   createNote,
   getNotesByUserId,
   deleteNote,
   updateNote,
   getNotesByTopicId,
+  updateNoteContent,
 };
